@@ -40,6 +40,8 @@ type DB struct {
 type Nats struct {
 	ClusterId string
 	ClientId  string
+	Host      string
+	Port      string
 }
 
 func MustLoad() *Config {
@@ -69,6 +71,8 @@ func MustLoad() *Config {
 
 	natsClusterId := utils.GetEnvOrFatal("NATS_CLUSTER_ID")
 	natsClientId := utils.GetEnvOrFatal("NATS_CLIENT_ID")
+	natsHost := utils.GetEnvOrFatal("NATS_HOST")
+	natsPort := utils.GetEnvOrFatal("NATS_PORT")
 
 	db := DB{
 		Host:     dbHost,
@@ -82,6 +86,8 @@ func MustLoad() *Config {
 	nats := Nats{
 		ClusterId: natsClusterId,
 		ClientId:  natsClientId,
+		Host:      natsHost,
+		Port:      natsPort,
 	}
 
 	cfg := Config{

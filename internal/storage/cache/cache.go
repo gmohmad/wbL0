@@ -24,7 +24,6 @@ func (c *Cache) GetOrder(id uuid.UUID) (interface{}, bool) {
 
 	order, ok := c.Data[id]
 
-
 	return order, ok
 }
 

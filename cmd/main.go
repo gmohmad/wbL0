@@ -26,9 +26,9 @@ func main() {
 	ctx := context.Background()
 
 	postgres, err := postgres.NewClient(ctx, cfg, 5, 3, log)
-	
+
 	if err != nil {
-		log.Error(err.Error())
+		log.Error(err.Error(), slog.Any("smth", postgres))
 		os.Exit(1)
 	}
 }
