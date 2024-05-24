@@ -60,15 +60,21 @@ func (s *Storage) GetOrders(ctx context.Context) ([]orders.Order, error) {
 
 func (s *Storage) SaveOrder(ctx context.Context, order *orders.OrderItem) (*uuid.UUID, error) {
 
-	var id uuid.UUID
+	var dbId [16]byte
 
 	stmt := `INSERT INTO orders (orderItem) VALUES ($1) RETURNING id`
 
-	if err := s.client.QueryRow(ctx, stmt, *order).Scan(&id); err != nil {
+	if err := s.client.QueryRow(ctx, stmt, *order).Scan(&dbId); err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {
 			return nil, fmt.Errorf("SQL Error: %s, Detail: %s, Where: %s, Code: %s, SQLState: %s", pgErr.Message, pgErr.Detail, pgErr.Where, pgErr.Code, pgErr.SQLState())
 		}
 		return nil, fmt.Errorf("Couldn't insert order: %w", err)
+	}
+
+	id, err := uuid.ParseBytes(dbId[:])
+
+	if err != nil {
+		return nil, fmt.Errorf("Couldn't parse id returned from db into uuidv4 format: %w", err)
 	}
 
 	return &id, nil

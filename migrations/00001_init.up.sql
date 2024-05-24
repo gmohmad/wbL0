@@ -1,4 +1,6 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE IF NOT EXISTS orders (
-	id UUID PRIMARY KEY DEFAULT get_random_uuid(),
-	orderItem JSONB NOT NULL,
-)
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    orderItem JSONB NOT NULL
+);

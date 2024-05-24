@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -32,7 +31,8 @@ func main() {
 	log.Info("starting the app", slog.String("env", cfg.Env))
 	log.Debug("debug messages are enabled")
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	postgres, err := postgres.NewClient(ctx, cfg, 5, 3, log)
 	if err != nil {
@@ -43,12 +43,12 @@ func main() {
 	storage := storage.NewStorage(postgres)
 	cache := cache.NewCache()
 
-	ordSub := subscribers.NewOrderSubscriber(cache, storage, log)
-	err = ordSub.Start(ctx, *cfg)
-
-	if err != nil {
-		log.Error(err.Error())
-	}
+	go func() {
+		ordSub := subscribers.NewOrderSubscriber(cache, storage, log)
+		if err := ordSub.Start(ctx, *cfg); err != nil {
+			log.Error(err.Error())
+		}
+	}()
 
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)

@@ -41,15 +41,20 @@ func (ordSub *OrderSubscriber) HandleOrderMessage(ctx context.Context) stan.MsgH
 
 		if err != nil {
 			ordSub.log.Info(err.Error())
+			return
 		}
 
 		id, err := ordSub.storage.SaveOrder(ctx, order)
 
 		if err != nil {
 			ordSub.log.Info(err.Error())
+			return
 		}
+		ordSub.log.Info(fmt.Sprintf("Successfully saved order, id: %v", id))
 
 		ordSub.cache.AddOrder(*id, *order)
+
+		ordSub.log.Info("Saved order in cache.")
 	}
 }
 
@@ -73,10 +78,11 @@ func (ordSub *OrderSubscriber) Start(ctx context.Context, cfg config.Config) err
 
 	defer conn.Close()
 
-
 	if err := ordSub.Subscribe(ctx, conn); err != nil {
 		return err
 	}
+
+	<-ctx.Done()
 
 	return nil
 }
