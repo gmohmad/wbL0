@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -42,6 +43,10 @@ func main() {
 
 	storage := storage.NewStorage(postgres)
 	cache := cache.NewCache()
+
+	if err := cache.FillUpCache(ctx, storage); err != nil {
+		log.Info(fmt.Sprintf("Error filling cache from db: %s", err))
+	}
 
 	go func() {
 		ordSub := subscribers.NewOrderSubscriber(cache, storage, log)

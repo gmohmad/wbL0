@@ -8,8 +8,8 @@ import (
 )
 
 type Response struct {
-	Status    string           `json:"status"`
-	Error     string           `json:"error,omitempty"`
+	Status    string            `json:"status"`
+	Error     string            `json:"error,omitempty"`
 	OrderItem *orders.OrderItem `json:"orderItem,omitempty"`
 }
 
@@ -26,7 +26,7 @@ func OK(order orders.OrderItem) Response {
 }
 
 func Error(msg string) Response {
-	return Response {
+	return Response{
 		Status: StatusErr,
 		Error:  msg,
 	}

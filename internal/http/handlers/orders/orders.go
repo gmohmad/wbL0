@@ -60,7 +60,7 @@ func GetOrder(ctx context.Context, log *slog.Logger, cache OrderFromCache, stora
 				return
 			}
 			log.Info(err.Error())
-			
+
 			renderError(w, r, http.StatusInternalServerError, "Internal server error")
 			return
 		}

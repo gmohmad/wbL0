@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"sync"
 
 	"gihub.com/gmohmad/wb_l0/internal/storage/models/orders"
@@ -17,6 +18,24 @@ func NewCache() *Cache {
 		lock: sync.RWMutex{},
 		Data: make(map[uuid.UUID]orders.OrderItem),
 	}
+}
+
+type Storage interface {
+	GetOrders(ctx context.Context) ([]orders.Order, error)
+}
+
+func (c *Cache) FillUpCache(ctx context.Context, storage Storage) error {
+	orders, err := storage.GetOrders(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	for _, order := range orders {
+		c.AddOrder(order.ID, order.OrderItem)
+	}
+
+	return nil
 }
 
 func (c *Cache) GetOrder(id uuid.UUID) (orders.OrderItem, bool) {

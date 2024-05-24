@@ -39,11 +39,47 @@ func (s *Storage) GetOrder(ctx context.Context, id uuid.UUID) (orders.Order, err
 	}
 
 	order := orders.Order{
-		ID: id,
+		ID:        id,
 		OrderItem: ordItem,
 	}
 
 	return order, nil
+}
+
+func (s *Storage) GetOrders(ctx context.Context) ([]orders.Order, error) {
+	query := `SELECT * FROM orders`
+
+	rows, err := s.client.Query(ctx, query)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error querying database: %w", err)
+	}
+
+	orderSlice := make([]orders.Order, 0)
+
+	for rows.Next() {
+		var dbId [16]byte
+		var ordItem orders.OrderItem
+
+		err = rows.Scan(&dbId, &ordItem)
+		if err != nil {
+			return nil, fmt.Errorf("Error scanning from rows: %w", err)
+		}
+		id, err := uuid.ParseBytes(dbId[:])
+
+		if err != nil {
+			return nil, fmt.Errorf("Couldn't parse id returned from db into uuidv4 format: %w", err)
+		}
+
+		order := orders.Order{
+			ID:        id,
+			OrderItem: ordItem,
+		}
+
+		orderSlice = append(orderSlice, order)
+	}
+
+	return orderSlice, nil
 }
 
 func (s *Storage) SaveOrder(ctx context.Context, order *orders.OrderItem) (*uuid.UUID, error) {
