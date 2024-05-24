@@ -64,5 +64,6 @@ func (s *Storage) SaveOrder(ctx context.Context, order *orders.OrderItem) (*uuid
 		}
 		return nil, fmt.Errorf("Couldn't insert order: %w", err)
 	}
+
 	return &id, nil
 }
