@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
+	"github.com/jackc/pgx/v5"
 )
 
 type OrderFromCache interface {
@@ -35,8 +36,7 @@ func GetOrder(ctx context.Context, log *slog.Logger, cache OrderFromCache, stora
 			errMsg := fmt.Sprintf("Invalid id: %s", err)
 			log.Info(errMsg)
 
-			render.JSON(w, r, Error(errMsg))
-
+			renderError(w, r, http.StatusBadRequest, errMsg)
 			return
 		}
 
@@ -52,9 +52,16 @@ func GetOrder(ctx context.Context, log *slog.Logger, cache OrderFromCache, stora
 		order, err := storage.GetOrder(ctx, id)
 
 		if err != nil {
-			log.Info(err.Error())
-			render.JSON(w, r, Error("Internal server error"))
+			if err == pgx.ErrNoRows {
+				errMsg := fmt.Sprintf("Order with id = '%s' does not exist", id)
+				log.Info(errMsg)
 
+				renderError(w, r, http.StatusNotFound, errMsg)
+				return
+			}
+			log.Info(err.Error())
+			
+			renderError(w, r, http.StatusInternalServerError, "Internal server error")
 			return
 		}
 
@@ -62,6 +69,7 @@ func GetOrder(ctx context.Context, log *slog.Logger, cache OrderFromCache, stora
 		log.Info("Successfully responded from db")
 
 		cache.AddOrder(id, order.OrderItem)
+		log.Info("Saved order in cache")
 
 		return
 	}

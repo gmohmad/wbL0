@@ -20,7 +20,7 @@ func NewCache() *Cache {
 }
 
 func (c *Cache) GetOrder(id uuid.UUID) (orders.OrderItem, bool) {
-	c.lock.RLock()
+	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	order, ok := c.Data[id]

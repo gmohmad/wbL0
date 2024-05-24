@@ -23,39 +23,27 @@ func NewStorage(client postgres.Client) *Storage {
 func (s *Storage) GetOrder(ctx context.Context, id uuid.UUID) (orders.Order, error) {
 	query := `SELECT * FROM orders WHERE id = $1`
 
-	var order orders.Order
+	var dbId [16]byte
+	var ordItem orders.OrderItem
 
 	row := s.client.QueryRow(ctx, query, id)
 
-	if err := row.Scan(&order.ID, &order.OrderItem); err != nil {
-		return orders.Order{}, fmt.Errorf("Error scanning from row: %w", err)
+	if err := row.Scan(&dbId, &ordItem); err != nil {
+		return orders.Order{}, err
+	}
+
+	id, err := uuid.ParseBytes(dbId[:])
+
+	if err != nil {
+		return orders.Order{}, fmt.Errorf("Couldn't parse id returned from db into uuidv4 format: %w", err)
+	}
+
+	order := orders.Order{
+		ID: id,
+		OrderItem: ordItem,
 	}
 
 	return order, nil
-}
-
-func (s *Storage) GetOrders(ctx context.Context) ([]orders.Order, error) {
-	query := `SELECT * FROM orders`
-
-	rows, err := s.client.Query(ctx, query)
-
-	if err != nil {
-		return nil, fmt.Errorf("Error querying database: %w", err)
-	}
-
-	orderSlice := make([]orders.Order, 0)
-
-	for rows.Next() {
-		var order orders.Order
-
-		err = rows.Scan(&order.ID, &order.OrderItem)
-		if err != nil {
-			return nil, fmt.Errorf("Error scanning from rows: %w", err)
-		}
-		orderSlice = append(orderSlice, order)
-	}
-
-	return orderSlice, nil
 }
 
 func (s *Storage) SaveOrder(ctx context.Context, order *orders.OrderItem) (*uuid.UUID, error) {
