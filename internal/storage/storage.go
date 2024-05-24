@@ -14,6 +14,12 @@ type Storage struct {
 	client postgres.Client
 }
 
+func NewStorage(client postgres.Client) *Storage {
+	return &Storage{
+		client: client,
+	}
+}
+
 func (s *Storage) GetOrder(ctx context.Context, id uuid.UUID) (orders.Order, error) {
 	query := `SELECT * FROM orders WHERE id = $1`
 

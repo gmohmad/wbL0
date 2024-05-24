@@ -14,11 +14,11 @@ import (
 )
 
 type Cache interface {
-	AddOrder(id uuid.UUID, order interface{})
+	AddOrder(id uuid.UUID, order orders.OrderItem)
 }
 
 type Storage interface {
-	SaveOrder(ctx context.Context, order *orders.OrderItem) (uuid.UUID, error)
+	SaveOrder(ctx context.Context, order *orders.OrderItem) (*uuid.UUID, error)
 }
 
 type OrderSubscriber struct {
@@ -49,7 +49,7 @@ func (ordSub *OrderSubscriber) HandleOrderMessage(ctx context.Context) stan.MsgH
 			ordSub.log.Info(err.Error())
 		}
 
-		ordSub.cache.AddOrder(id, order)
+		ordSub.cache.AddOrder(*id, *order)
 	}
 }
 
@@ -63,18 +63,18 @@ func (ordSub *OrderSubscriber) Subscribe(ctx context.Context, conn stan.Conn) er
 	return nil
 }
 
-func (ordSub *OrderSubscriber) Start(ctx context.Context, cfg config.Config, cache Cache, storage Storage, log *slog.Logger) error {
+func (ordSub *OrderSubscriber) Start(ctx context.Context, cfg config.Config) error {
 	url := fmt.Sprintf("nats://%s:%s", cfg.Nats.Host, cfg.Nats.Port)
 	conn, err := nats.NewNatsConnection(cfg.ClusterId, cfg.ClientId, url)
-	defer conn.Close()
 
 	if err != nil {
 		return err
 	}
 
-	orderSub := NewOrderSubscriber(cache, storage, log)
+	defer conn.Close()
 
-	if err := orderSub.Subscribe(ctx, conn); err != nil {
+
+	if err := ordSub.Subscribe(ctx, conn); err != nil {
 		return err
 	}
 

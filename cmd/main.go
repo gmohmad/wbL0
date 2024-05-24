@@ -2,10 +2,19 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+
 	"gihub.com/gmohmad/wb_l0/internal/config"
+	"gihub.com/gmohmad/wb_l0/internal/http/handlers/orders"
+	"gihub.com/gmohmad/wb_l0/internal/nats/subscribers"
+	"gihub.com/gmohmad/wb_l0/internal/storage"
+	"gihub.com/gmohmad/wb_l0/internal/storage/cache"
 	"gihub.com/gmohmad/wb_l0/internal/storage/postgres"
 )
 
@@ -26,11 +35,43 @@ func main() {
 	ctx := context.Background()
 
 	postgres, err := postgres.NewClient(ctx, cfg, 5, 3, log)
-
 	if err != nil {
 		log.Error(err.Error(), slog.Any("smth", postgres))
 		os.Exit(1)
 	}
+
+	storage := storage.NewStorage(postgres)
+	cache := cache.NewCache()
+
+	ordSub := subscribers.NewOrderSubscriber(cache, storage, log)
+	err = ordSub.Start(ctx, *cfg)
+
+	if err != nil {
+		log.Error(err.Error())
+	}
+
+	router := chi.NewRouter()
+	router.Use(middleware.RequestID)
+	router.Use(middleware.RealIP)
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.URLFormat)
+
+	router.Get("/order/{id}", orders.GetOrder(ctx, log, cache, storage))
+
+	srv := &http.Server{
+		Addr:         cfg.Address,
+		Handler:      router,
+		ReadTimeout:  cfg.Timeout,
+		WriteTimeout: cfg.Timeout,
+		IdleTimeout:  cfg.IdleTimeout,
+	}
+
+	log.Info("Starting http server", slog.String("addr", cfg.Address))
+	if err := srv.ListenAndServe(); err != nil {
+		log.Error("Error starting http server")
+	}
+
 }
 
 func setupLogger(env string) *slog.Logger {
