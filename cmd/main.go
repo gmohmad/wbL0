@@ -16,6 +16,7 @@ import (
 	"gihub.com/gmohmad/wb_l0/internal/storage"
 	"gihub.com/gmohmad/wb_l0/internal/storage/cache"
 	"gihub.com/gmohmad/wb_l0/internal/storage/postgres"
+	"gihub.com/gmohmad/wb_l0/internal/utils"
 )
 
 const (
@@ -35,13 +36,16 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	postgres, err := postgres.NewClient(ctx, cfg, 5, 3, log)
+	postgresClient, err := postgres.NewClient(ctx, &cfg.DB, 5, 3, log)
 	if err != nil {
-		log.Error(err.Error(), slog.Any("smth", postgres))
-		os.Exit(1)
+		utils.LogFatal(log, err)
 	}
 
-	storage := storage.NewStorage(postgres)
+	if err := postgres.Migrate(&cfg.DB, log); err != nil {
+		utils.LogFatal(log, err)
+	}
+
+	storage := storage.NewStorage(postgresClient)
 	cache := cache.NewCache()
 
 	if err := cache.FillUpCache(ctx, storage); err != nil {

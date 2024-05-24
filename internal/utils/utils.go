@@ -2,6 +2,7 @@ package utils
 
 import (
 	"log"
+	"log/slog"
 	"os"
 )
 
@@ -13,4 +14,9 @@ func GetEnvOrFatal(envVar string) string {
 	}
 
 	return env
+}
+
+func LogFatal(log *slog.Logger, err error) {
+	log.Error(err.Error())
+	os.Exit(1)
 }

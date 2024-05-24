@@ -54,6 +54,7 @@ func (s *Storage) GetOrders(ctx context.Context) ([]orders.Order, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error querying database: %w", err)
 	}
+	defer rows.Close()
 
 	orderSlice := make([]orders.Order, 0)
 
@@ -61,10 +62,10 @@ func (s *Storage) GetOrders(ctx context.Context) ([]orders.Order, error) {
 		var dbId [16]byte
 		var ordItem orders.OrderItem
 
-		err = rows.Scan(&dbId, &ordItem)
-		if err != nil {
+		if err = rows.Scan(&dbId, &ordItem); err != nil {
 			return nil, fmt.Errorf("Error scanning from rows: %w", err)
 		}
+
 		id, err := uuid.ParseBytes(dbId[:])
 
 		if err != nil {
@@ -77,6 +78,10 @@ func (s *Storage) GetOrders(ctx context.Context) ([]orders.Order, error) {
 		}
 
 		orderSlice = append(orderSlice, order)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("Row iteration error: %w", err)
 	}
 
 	return orderSlice, nil

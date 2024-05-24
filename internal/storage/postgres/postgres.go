@@ -19,8 +19,11 @@ type Client interface {
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
-func NewClient(ctx context.Context, cfg *config.Config, maxRetries int, delay time.Duration, log *slog.Logger) (pool Client, err error) {
-	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s", cfg.User, cfg.Password, cfg.DB.Host, cfg.DB.Port, cfg.DBName, cfg.SSLMode)
+func NewClient(ctx context.Context, cfg *config.DB, maxRetries int, delay time.Duration, log *slog.Logger) (pool Client, err error) {
+	dsn := fmt.Sprintf(
+		"postgresql://%s:%s@%s:%s/%s?sslmode=%s", 
+		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName, cfg.SSLMode,
+	)
 
 	for i := range maxRetries {
 

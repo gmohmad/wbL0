@@ -29,12 +29,13 @@ type HTTPServer struct {
 }
 
 type DB struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	DBName   string
-	SSLMode  string
+	Host           string
+	Port           string
+	User           string
+	Password       string
+	DBName         string
+	SSLMode        string
+	MigrationsPath string
 }
 
 type Nats struct {
@@ -68,6 +69,7 @@ func MustLoad() *Config {
 	dbPassword := utils.GetEnvOrFatal("POSTGRES_PASSWORD")
 	dbName := utils.GetEnvOrFatal("POSTGRES_DB")
 	dbSslMode := utils.GetEnvOrFatal("SSL_MODE")
+	migrationsPath := utils.GetEnvOrFatal("MIGRATIONS_PATH")
 
 	natsClusterId := utils.GetEnvOrFatal("NATS_CLUSTER_ID")
 	natsClientId := utils.GetEnvOrFatal("NATS_CLIENT_ID")
@@ -75,12 +77,13 @@ func MustLoad() *Config {
 	natsPort := utils.GetEnvOrFatal("NATS_PORT")
 
 	db := DB{
-		Host:     dbHost,
-		Port:     dbPort,
-		User:     dbUser,
-		Password: dbPassword,
-		DBName:   dbName,
-		SSLMode:  dbSslMode,
+		Host:           dbHost,
+		Port:           dbPort,
+		User:           dbUser,
+		Password:       dbPassword,
+		DBName:         dbName,
+		SSLMode:        dbSslMode,
+		MigrationsPath: migrationsPath,
 	}
 
 	nats := Nats{
