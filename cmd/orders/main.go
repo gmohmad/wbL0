@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -19,16 +18,10 @@ import (
 	"gihub.com/gmohmad/wb_l0/internal/utils"
 )
 
-const (
-	envLocal = "local"
-	envDev   = "dev"
-	envProd  = "prod"
-)
-
 func main() {
 	cfg := config.MustLoad()
 
-	log := setupLogger(cfg.Env)
+	log := config.SetupLogger(cfg.Env)
 
 	log.Info("starting the app", slog.String("env", cfg.Env))
 	log.Debug("debug messages are enabled")
@@ -54,7 +47,7 @@ func main() {
 
 	go func() {
 		ordSub := subscribers.NewOrderSubscriber(cache, storage, log)
-		if err := ordSub.Start(ctx, *cfg); err != nil {
+		if err := ordSub.Start(ctx, &cfg.Nats); err != nil {
 			log.Error(err.Error())
 		}
 	}()
@@ -81,19 +74,4 @@ func main() {
 		log.Error("Error starting http server")
 	}
 
-}
-
-func setupLogger(env string) *slog.Logger {
-	var log *slog.Logger
-
-	switch env {
-	case envLocal:
-		log = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	case envDev:
-		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	case envProd:
-		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	}
-
-	return log
 }

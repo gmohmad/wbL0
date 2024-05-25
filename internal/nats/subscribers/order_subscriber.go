@@ -58,8 +58,8 @@ func (ordSub *OrderSubscriber) HandleOrderMessage(ctx context.Context) stan.MsgH
 	}
 }
 
-func (ordSub *OrderSubscriber) Subscribe(ctx context.Context, conn stan.Conn) error {
-	_, err := conn.Subscribe("orders", ordSub.HandleOrderMessage(ctx))
+func (ordSub *OrderSubscriber) Subscribe(ctx context.Context, conn stan.Conn, subject string) error {
+	_, err := conn.Subscribe(subject, ordSub.HandleOrderMessage(ctx))
 
 	if err != nil {
 		return fmt.Errorf("Error subscribing to orders subject: %w", err)
@@ -68,8 +68,8 @@ func (ordSub *OrderSubscriber) Subscribe(ctx context.Context, conn stan.Conn) er
 	return nil
 }
 
-func (ordSub *OrderSubscriber) Start(ctx context.Context, cfg config.Config) error {
-	url := fmt.Sprintf("nats://%s:%s", cfg.Nats.Host, cfg.Nats.Port)
+func (ordSub *OrderSubscriber) Start(ctx context.Context, cfg *config.Nats) error {
+	url := fmt.Sprintf("nats://%s:%s", cfg.Host, cfg.Port)
 	conn, err := nats.NewNatsConnection(cfg.ClusterId, cfg.ClientId, url)
 
 	if err != nil {
@@ -78,7 +78,7 @@ func (ordSub *OrderSubscriber) Start(ctx context.Context, cfg config.Config) err
 
 	defer conn.Close()
 
-	if err := ordSub.Subscribe(ctx, conn); err != nil {
+	if err := ordSub.Subscribe(ctx, conn, cfg.Subject); err != nil {
 		return err
 	}
 

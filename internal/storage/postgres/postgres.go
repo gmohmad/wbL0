@@ -21,7 +21,7 @@ type Client interface {
 
 func NewClient(ctx context.Context, cfg *config.DB, maxRetries int, delay time.Duration, log *slog.Logger) (pool Client, err error) {
 	dsn := fmt.Sprintf(
-		"postgresql://%s:%s@%s:%s/%s?sslmode=%s", 
+		"postgresql://%s:%s@%s:%s/%s?sslmode=%s",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName, cfg.SSLMode,
 	)
 

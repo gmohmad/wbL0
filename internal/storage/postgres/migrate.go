@@ -13,7 +13,7 @@ import (
 func Migrate(cfg *config.DB, log *slog.Logger) error {
 
 	db := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=%s", 
+		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName, cfg.SSLMode,
 	)
 
