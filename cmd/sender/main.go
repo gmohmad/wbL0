@@ -80,6 +80,6 @@ func main() {
 			log.Info(fmt.Sprintf("Error while sending message: %s", err))
 			continue
 		}
-		log.Info("Successfully send a message")
+		log.Info("Successfully sent a message")
 	}
 }

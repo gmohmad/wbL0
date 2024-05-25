@@ -7,6 +7,7 @@ import (
 	"gihub.com/gmohmad/wb_l0/internal/storage/models/orders"
 	"gihub.com/gmohmad/wb_l0/internal/storage/postgres"
 	uuid "github.com/fossoreslp/go-uuid-v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -23,60 +24,26 @@ func NewStorage(client postgres.Client) *Storage {
 func (s *Storage) GetOrder(ctx context.Context, id uuid.UUID) (orders.Order, error) {
 	query := `SELECT * FROM orders WHERE id = $1`
 
-	var dbId [16]byte
-	var ordItem orders.OrderItem
-
 	row := s.client.QueryRow(ctx, query, id)
 
-	if err := row.Scan(&dbId, &ordItem); err != nil {
-		return orders.Order{}, err
-	}
-
-	id, err := uuid.ParseBytes(dbId[:])
-
-	if err != nil {
-		return orders.Order{}, fmt.Errorf("Couldn't parse id returned from db into uuidv4 format: %w", err)
-	}
-
-	order := orders.Order{
-		ID:        id,
-		OrderItem: ordItem,
-	}
-
-	return order, nil
+	return scanOrder(row)
 }
 
 func (s *Storage) GetOrders(ctx context.Context) ([]orders.Order, error) {
 	query := `SELECT * FROM orders`
 
 	rows, err := s.client.Query(ctx, query)
-
 	if err != nil {
 		return nil, fmt.Errorf("Error querying database: %w", err)
 	}
 	defer rows.Close()
 
-	orderSlice := make([]orders.Order, 0)
-
+	var orderSlice []orders.Order
 	for rows.Next() {
-		var dbId [16]byte
-		var ordItem orders.OrderItem
-
-		if err = rows.Scan(&dbId, &ordItem); err != nil {
-			return nil, fmt.Errorf("Error scanning from rows: %w", err)
-		}
-
-		id, err := uuid.ParseBytes(dbId[:])
-
+		order, err := scanOrder(rows)
 		if err != nil {
-			return nil, fmt.Errorf("Couldn't parse id returned from db into uuidv4 format: %w", err)
+			return nil, err
 		}
-
-		order := orders.Order{
-			ID:        id,
-			OrderItem: ordItem,
-		}
-
 		orderSlice = append(orderSlice, order)
 	}
 
@@ -107,4 +74,23 @@ func (s *Storage) SaveOrder(ctx context.Context, order *orders.OrderItem) (*uuid
 	}
 
 	return &id, nil
+}
+
+func scanOrder(row pgx.Row) (orders.Order, error) {
+	var dbId [16]byte
+	var ordItem orders.OrderItem
+
+	if err := row.Scan(&dbId, &ordItem); err != nil {
+		return orders.Order{}, fmt.Errorf("Error scanning row: %w", err)
+	}
+
+	id, err := uuid.ParseBytes(dbId[:])
+	if err != nil {
+		return orders.Order{}, fmt.Errorf("Couldn't parse id returned from db into uuidv4 format: %w", err)
+	}
+
+	return orders.Order{
+		ID:        id,
+		OrderItem: ordItem,
+	}, nil
 }
