@@ -59,6 +59,8 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
+	router.Mount("/", http.FileServer(http.Dir("./static")))
+
 	router.Get("/order/{id}", orders.GetOrder(ctx, log, cache, storage))
 
 	srv := &http.Server{

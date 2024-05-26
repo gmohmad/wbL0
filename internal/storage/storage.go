@@ -81,7 +81,7 @@ func scanOrder(row pgx.Row) (orders.Order, error) {
 	var ordItem orders.OrderItem
 
 	if err := row.Scan(&dbId, &ordItem); err != nil {
-		return orders.Order{}, fmt.Errorf("Error scanning row: %w", err)
+		return orders.Order{}, err
 	}
 
 	id, err := uuid.ParseBytes(dbId[:])
