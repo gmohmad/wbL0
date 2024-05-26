@@ -6,18 +6,15 @@
 	<link rel="stylesheet" type="text/css" href="./main.css" />
 </head>
 <body>
-	<div> 
+	<div class="container"> 
 		<h1 class="title">Order Lookup</h1>
 		<form id="orderForm">
-			<label for="orderId">Order ID:</label>
-			<input type="text" id="orderId" name="orderId" required>
-			<button type="submit">Get Order</button>
+			<label class="label" for="orderId">Order ID:</label>
+			<input class="inputbox" type="text" id="orderId" name="orderId" required>
+			<button class="btn" type="submit">Get Order</button>
 		</form>
-
-		<div id="status"></div>
-		<div id="orderItem"></div>
-		<div id="errorMsg"></div>
-	<div/>
+		<div class="resp" id="resp"></div>
+	</div>
 
     <script src="./script.js"></script>
 </body>
