@@ -39,8 +39,8 @@ func (c *Cache) FillUpCache(ctx context.Context, storage Storage) error {
 }
 
 func (c *Cache) GetOrder(id uuid.UUID) (orders.OrderItem, bool) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.lock.RLock()
+	defer c.lock.RUnlock()
 
 	order, ok := c.Data[id]
 
