@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -23,8 +26,7 @@ func main() {
 
 	log := config.SetupLogger(cfg.Env)
 
-	log.Info("starting the app", slog.String("env", cfg.Env))
-	log.Debug("debug messages are enabled")
+	log.Info("starting the service", slog.String("env", cfg.Env))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -71,9 +73,22 @@ func main() {
 		IdleTimeout:  cfg.IdleTimeout,
 	}
 
-	log.Info("Starting http server", slog.String("addr", cfg.Address))
-	if err := srv.ListenAndServe(); err != nil {
-		log.Error("Error starting http server")
-	}
+	go func() {
+		log.Info("Starting http server", slog.String("addr", cfg.Address))
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Error("Error starting http server: ", err)
+		}
+	}()
+	
+	stopChan := make(chan os.Signal, 1)
+	signal.Notify(stopChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
+	<-stopChan
+    log.Info("Shutting down the server...")
+
+    if err := srv.Shutdown(ctx); err != nil {
+      log.Error("Error shutting down the server: ", err)
+    }
+
+    log.Info("Server gracefully stopped")
 }

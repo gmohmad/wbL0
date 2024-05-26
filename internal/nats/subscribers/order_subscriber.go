@@ -59,7 +59,8 @@ func (ordSub *OrderSubscriber) HandleOrderMessage(ctx context.Context) stan.MsgH
 }
 
 func (ordSub *OrderSubscriber) Subscribe(ctx context.Context, conn stan.Conn, subject string) error {
-	_, err := conn.Subscribe(subject, ordSub.HandleOrderMessage(ctx))
+	sub, err := conn.Subscribe(subject, ordSub.HandleOrderMessage(ctx))
+	defer sub.Unsubscribe()
 
 	if err != nil {
 		return fmt.Errorf("Error subscribing to orders subject: %w", err)
