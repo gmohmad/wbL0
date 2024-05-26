@@ -79,16 +79,16 @@ func main() {
 			log.Error("Error starting http server: ", err)
 		}
 	}()
-	
+
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	<-stopChan
-    log.Info("Shutting down the server...")
+	log.Info("Shutting down the server...")
 
-    if err := srv.Shutdown(ctx); err != nil {
-      log.Error("Error shutting down the server: ", err)
-    }
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Error("Error shutting down the server: ", err)
+	}
 
-    log.Info("Server gracefully stopped")
+	log.Info("Server gracefully stopped")
 }
