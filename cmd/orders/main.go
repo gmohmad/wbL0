@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/go-chi/chi/v5"
@@ -22,6 +23,8 @@ import (
 )
 
 func main() {
+	var wg sync.WaitGroup
+
 	cfg := config.MustLoad()
 
 	log := config.SetupLogger(cfg.Env)
@@ -47,7 +50,9 @@ func main() {
 		log.Info(fmt.Sprintf("Error filling cache from db: %s", err))
 	}
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		ordSub := subscribers.NewOrderSubscriber(cache, storage, log)
 		if err := ordSub.Start(ctx, &cfg.Nats); err != nil {
 			log.Error(err.Error())
@@ -84,6 +89,14 @@ func main() {
 	signal.Notify(stopChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	<-stopChan
+
+	cancel()
+
+	wg.Wait()
+
+	log.Info("Closing postgres connection pool")
+	postgresClient.Close()
+
 	log.Info("Shutting down the server...")
 
 	if err := srv.Shutdown(ctx); err != nil {

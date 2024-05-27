@@ -58,30 +58,35 @@ func (ordSub *OrderSubscriber) HandleOrderMessage(ctx context.Context) stan.MsgH
 	}
 }
 
-func (ordSub *OrderSubscriber) Subscribe(ctx context.Context, conn stan.Conn, subject string) error {
+func (ordSub *OrderSubscriber) Subscribe(ctx context.Context, conn stan.Conn, subject string) (stan.Subscription, error) {
 	sub, err := conn.Subscribe(subject, ordSub.HandleOrderMessage(ctx))
-	defer sub.Unsubscribe()
 
 	if err != nil {
-		return fmt.Errorf("Error subscribing to orders subject: %w", err)
+		return nil, fmt.Errorf("Error subscribing to '%s' subject: %w", subject, err)
 	}
 
-	return nil
+	return sub, nil
 }
 
 func (ordSub *OrderSubscriber) Start(ctx context.Context, cfg *config.Nats) error {
 	url := fmt.Sprintf("nats://%s:%s", cfg.Host, cfg.Port)
 	conn, err := nats.NewNatsConnection(cfg.ClusterId, cfg.ClientId, url)
-
 	if err != nil {
 		return err
 	}
+	defer func() {
+		ordSub.log.Info("Closing nats connection")
+		conn.Close()
+	}()
 
-	defer conn.Close()
-
-	if err := ordSub.Subscribe(ctx, conn, cfg.Subject); err != nil {
+	sub, err := ordSub.Subscribe(ctx, conn, cfg.Subject)
+	if err != nil {
 		return err
 	}
+	defer func() {
+		ordSub.log.Info(fmt.Sprintf("Unsubscribing from '%s' subject", cfg.Subject))
+		sub.Unsubscribe()
+	}()
 
 	<-ctx.Done()
 
