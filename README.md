@@ -41,5 +41,5 @@ make up
 
 #### 2. Stop app containers
 ```
-make down # run 'make donwv' to also remove volumes
+make down # run 'make downv' to also remove volumes
 ```

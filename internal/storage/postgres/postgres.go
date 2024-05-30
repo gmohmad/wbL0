@@ -13,6 +13,11 @@ import (
 	"gihub.com/gmohmad/wb_l0/internal/config"
 )
 
+const (
+	maxRetries = 5
+	delay      = 3
+)
+
 type Client interface {
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
@@ -20,7 +25,7 @@ type Client interface {
 	Close()
 }
 
-func NewClient(ctx context.Context, cfg *config.DB, maxRetries int, delay time.Duration, log *slog.Logger) (pool Client, err error) {
+func NewClient(ctx context.Context, cfg *config.DB, log *slog.Logger) (pool Client, err error) {
 	dsn := fmt.Sprintf(
 		"postgresql://%s:%s@%s:%s/%s?sslmode=%s",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName, cfg.SSLMode,

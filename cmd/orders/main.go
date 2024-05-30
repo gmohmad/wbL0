@@ -34,11 +34,14 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	postgresClient, err := postgres.NewClient(ctx, &cfg.DB, 5, 3, log)
+	// Init postgres client
+	postgresClient, err := postgres.NewClient(ctx, &cfg.DB, log)
 	if err != nil {
 		utils.LogFatal(log, err)
 	}
+	defer postgresClient.Close()
 
+	// Apply UP migrations
 	if err := postgres.Migrate(&cfg.DB, log); err != nil {
 		utils.LogFatal(log, err)
 	}
@@ -46,10 +49,12 @@ func main() {
 	storage := storage.NewStorage(postgresClient)
 	cache := cache.NewCache()
 
-	if err := cache.FillUpCache(ctx, storage); err != nil {
+	// Fill cache up with data from db
+	if err := cache.WarmUpCache(ctx, storage); err != nil {
 		log.Info(fmt.Sprintf("Error filling cache from db: %s", err))
 	}
 
+	// Start nats order subscriber
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -59,6 +64,7 @@ func main() {
 		}
 	}()
 
+	// Setup http server
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)
@@ -85,17 +91,13 @@ func main() {
 		}
 	}()
 
+	// Graceful shutdown
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	<-stopChan
 
 	cancel()
-
-	wg.Wait()
-
-	log.Info("Closing postgres connection pool")
-	postgresClient.Close()
 
 	log.Info("Shutting down the server...")
 
@@ -104,4 +106,6 @@ func main() {
 	}
 
 	log.Info("Server gracefully stopped")
+
+	wg.Wait()
 }

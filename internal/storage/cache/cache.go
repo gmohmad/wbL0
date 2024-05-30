@@ -24,7 +24,7 @@ type Storage interface {
 	GetOrders(ctx context.Context) ([]orders.Order, error)
 }
 
-func (c *Cache) FillUpCache(ctx context.Context, storage Storage) error {
+func (c *Cache) WarmUpCache(ctx context.Context, storage Storage) error {
 	orders, err := storage.GetOrders(ctx)
 
 	if err != nil {
