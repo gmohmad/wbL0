@@ -35,7 +35,8 @@ git clone https://github.com/gmohmad/wbL0.git
 ```
 
 ### 2. Add .env file into the root directory of the project and fill it up like .env.example
-**you can just copy everything from .env.example and paste it into .env, or if you're using vim, just type ":r .env.example" in normal mode
+**you can just copy everything from .env.example and paste it into .env, or if you're using vim/neovim etc, 
+just open .env file you created and type ":r .env.example" in normal mode
 <br><br>
 ### 3. Start project containers
 ```
